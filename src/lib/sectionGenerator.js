@@ -25,7 +25,15 @@ export function createSectionGenerator(fetchImpl) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sectionKey: key }),
       })
-      const json = await res.json()
+      let json
+      try {
+        json = await res.json()
+      } catch (parseErr) {
+        // The server sent something that wasn't valid JSON - usually a platform-level
+        // timeout or error page (plain text/HTML) rather than our own handler's response.
+        // Give a message that actually means something rather than a raw parse error.
+        return { ok: false, key, error: `Server didn't respond properly (HTTP ${res.status}) - likely a timeout on a search-heavy section. Try again.` }
+      }
       if (!res.ok || json.error) {
         return { ok: false, key, error: json.error || `HTTP ${res.status}` }
       }
