@@ -120,12 +120,18 @@ function describeError(status, data) {
 // so a sentence containing real content (even if it mentions "I now have a divergence")
 // isn't accidentally gutted for using similar words mid-sentence.
 const NARRATION_PATTERNS = [
-  /^(now |so )?i (now )?have (a |the |everything|enough|sufficient)\b/i,
+  // Broad, not narrow: this editorial voice is written third-person/imperative and
+  // essentially never uses first-person "I" to describe its own process or findings.
+  // Rather than matching exact phrasings seen once (which don't generalise - the model
+  // rephrases differently every run), this catches the underlying shape: an optional
+  // filler word/punctuation lead-in, then "I" + a self-referential verb, regardless of
+  // what specific object or phrasing follows.
+  /^(now|so|good|ok|okay)?[\s.,:—\-]*i\s+(now\s+|already\s+)?(have|need|am|will|'ve|'m|should|can)\b/i,
   /^let me\b/i,
-  /^(good|ok|okay)[,.]?\s*(i've|i have|now)\b/i,
-  /^i('ve| have) (now )?(confirmed|verified|checked|compiled)\b/i,
+  /^(good|ok|okay)[\s.,:—\-]+$/i, // standalone filler like "Good." or "OK,"
   /^the picture is (now )?clear\b/i,
-  /^i (now )?need to\b/i,
+  /^key facts confirmed\b/i,
+  /^my job (now )?is to\b/i,
 ]
 
 export function stripNarration(text) {
