@@ -16,6 +16,15 @@ export const SECTIONS = [
   { key: 'deepdive', label: 'Deep Dive', instruction: 'Write "## Deep Dive" - find one substantive piece of narrative wine journalism and summarise it properly in your own words across a few paragraphs. Explain why it matters, not just what it says.' },
   { key: 'perth', label: 'Around Perth', instruction: 'Write "## Around Perth" - Lamont\'s Cottesloe and WA-local happenings, only upcoming events given today\'s date, never past ones.' },
   { key: 'hitlist', label: 'Hit List & Coming Up', instruction: 'Write "## Hit List — Things to Try" and "## Coming Up". If recent purchases are provided below, actively build the Hit List around them - name the purchase and build outward from it - rather than just avoiding repeats. Coming Up: release dates, allocations, events for watchlist producers.' },
+  { key: 'critic_highlights', label: 'Critic Highlights — Top Scores This Cycle', maxTokens: 2200, instruction: `Write "## Critic Highlights — Top Scores This Cycle". This section is deliberately NOT filtered to the watchlist - every other section in this newsletter only searches producers already being tracked, which means a genuinely exceptional wine from an unfamiliar producer would never surface. This section exists to catch exactly that.
+
+Search broadly across Winefront, Halliday, Ray Jordan, Erin Larkin/Wine Advocate, and Jukes for the highest-scoring Australian wines being reported this cycle (97+ points, or the equivalent top tier for whichever critic uses a different scale) - regardless of whether the producer is already on the watchlist. The goal is genuine discovery: producers or wines the collector may not know about yet.
+
+Apply the same tier discipline as everywhere else: note if a high score is Tier 2-only and unconfirmed by Tier 1, flag genuine cross-critic convergence as a stronger signal, and be willing to say a score looks like grade inflation rather than taking it at face value.
+
+If a wine surfacing here is ALSO a watchlist producer already covered in another section this issue, do not repeat it in full - a one-line cross-reference is enough ("see Margaret River section"). This section's value is specifically the things NOT covered elsewhere.
+
+If nothing genuinely new or noteworthy turns up beyond what's already covered in other sections, say so briefly rather than padding with familiar names.` },
   { key: 'substack_intel', label: 'Substack Intelligence — Authors & Overlap', maxTokens: 3000, instruction: `Produce an intelligence briefing from the tracked Substack authors listed below - not a newsletter summary. Read across each author's recent output and extract what's genuinely useful, not a list of what they published.
 
 PRIMARY FOCUS: Bordeaux, Barolo, and Burgundy. This is deliberate - the domestic Hit List, Margaret River, and Around Perth sections elsewhere in this newsletter already cover Australian wine thoroughly using Halliday/Ray Jordan/Winefront. Substack's actual value is the opposite: these authors are the primary source for Bordeaux, Barolo and Burgundy specifically, regions where Australian critics have little presence. Do not spend space re-covering Australian wine here unless an author is explicitly drawing a comparison between an Australian wine and one of these three regions (e.g. Margaret River Cabernet vs Bordeaux, Australian Pinot vs Burgundy) - that comparison IS in scope and valuable.
@@ -97,6 +106,47 @@ function describeError(status, data) {
     return data.error.message + (isRetryableStatus(status) ? ' (transient - try again)' : ' (will not fix itself by retrying)')
   }
   return `HTTP ${status} - unexpected response`
+}
+
+// Prompt instructions alone don't reliably stop this - even when explicitly told not to
+// narrate, the model can slip back into "Let me check..." / "I now have..." under enough
+// search-heavy pressure. This is a deterministic backstop: strip sentences that are pure
+// meta-commentary about the model's own research process, leaving actual content intact.
+// Deliberately conservative - only matches sentences that clearly START with these patterns,
+// so a sentence containing real content (even if it mentions "I now have a divergence")
+// isn't accidentally gutted for using similar words mid-sentence.
+const NARRATION_PATTERNS = [
+  /^(now |so )?i (now )?have (a |the |everything|enough|sufficient)\b/i,
+  /^let me\b/i,
+  /^(good|ok|okay)[,.]?\s*(i've|i have|now)\b/i,
+  /^i('ve| have) (now )?(confirmed|verified|checked|compiled)\b/i,
+  /^the picture is (now )?clear\b/i,
+  /^i (now )?need to\b/i,
+]
+
+export function stripNarration(text) {
+  // Process paragraph-by-paragraph (splitting on real blank lines) so that genuine
+  // paragraph structure survives - only whitespace WITHIN a paragraph gets normalised
+  // when sentences are rejoined, never the blank lines BETWEEN paragraphs.
+  const paragraphs = text.split(/\n\s*\n+/)
+  const cleaned = paragraphs.map(para => {
+    const sentences = para.split(/(?<=[.!?])\s+/)
+    const kept = sentences.map(s => {
+      const trimmed = s.trim()
+      if (!NARRATION_PATTERNS.some(p => p.test(trimmed))) return trimmed
+      // The narration is often just a lead-in clause before real content, e.g.
+      // "The picture is clear and documented: Cullen scored well across critics."
+      // Salvage whatever follows a colon rather than losing real content along
+      // with the narration that happened to introduce it.
+      const colonIndex = trimmed.indexOf(':')
+      if (colonIndex !== -1 && colonIndex < trimmed.length - 1) {
+        return trimmed.slice(colonIndex + 1).trim()
+      }
+      return '' // pure narration with nothing salvageable
+    }).filter(Boolean)
+    return kept.join(' ').trim()
+  }).filter(p => p.length > 0)
+  return cleaned.join('\n\n').trim()
 }
 
 export default async function handler(req, res) {
@@ -216,7 +266,9 @@ export function buildHandler({ createClient: createClientDep, fetchImpl }) {
     // breaks the model intends WITHIN a single block (its own internal '\n\n') are left
     // completely untouched - only trimming each block's own leading/trailing whitespace
     // before stitching the blocks together, so we don't collapse real paragraph structure.
-    const text = textBlocks.map(t => t.trim()).join(' ').trim()
+    // stripNarration is a deterministic backstop for cases where the prompt instruction
+    // alone doesn't stop the model narrating its own research process (see function above).
+    const text = stripNarration(textBlocks.map(t => t.trim()).join(' ').trim())
     const truncated = data.stop_reason === 'max_tokens'
 
     if (!text) {
