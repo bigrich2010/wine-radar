@@ -1,52 +1,61 @@
 * { box-sizing: border-box; }
-body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0c0a09; color: #e7e5e4; }
+body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #18140f; color: #e8e1d4; }
 .app { max-width: 720px; margin: 0 auto; padding: 0 16px 60px; }
-.topbar { padding: 16px 0 10px; border-bottom: 1px solid #292524; margin-bottom: 14px; position: sticky; top: 0; background: #0c0a09; z-index: 5; }
-.topbar h1 { font-size: 19px; margin: 0 0 8px; color: #fde68a; }
+.topbar { padding: 16px 0 10px; border-bottom: 1px solid #332c22; margin-bottom: 14px; position: sticky; top: 0; background: #18140f; z-index: 5; }
+.topbar h1 { font-size: 19px; margin: 0 0 8px; color: #e0b872; }
 .topbar nav { display: flex; gap: 16px; }
-.topbar nav a { color: #a8a29e; text-decoration: none; font-size: 13px; padding-bottom: 4px; border-bottom: 2px solid transparent; }
-.topbar nav a.active { color: #fde68a; border-bottom-color: #fde68a; }
+.topbar nav a { color: #a89a86; text-decoration: none; font-size: 13px; padding-bottom: 4px; border-bottom: 2px solid transparent; }
+.topbar nav a.active { color: #e0b872; border-bottom-color: #e0b872; }
+
+.doc-title { padding: 10px 0 14px; }
+.doc-title h1 { font-size: 20px; margin: 0 0 2px; color: #e0b872; }
+.doc-title .doc-date { font-size: 12.5px; color: #a08f76; }
 
 .row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
-button.primary { background: #7f1d1d; color: #fff; border: none; padding: 9px 16px; border-radius: 6px; font-size: 13px; cursor: pointer; }
+button.primary { background: #7a2e22; color: #fdf6ec; border: none; padding: 9px 16px; border-radius: 6px; font-size: 13px; cursor: pointer; }
 button.primary:disabled { opacity: 0.5; cursor: default; }
-button.secondary { background: #292524; color: #d6d3d1; border: none; padding: 8px 14px; border-radius: 6px; font-size: 12.5px; cursor: pointer; }
+button.secondary { background: #2c2620; color: #d8cbb8; border: none; padding: 8px 14px; border-radius: 6px; font-size: 12.5px; cursor: pointer; }
 button.secondary:disabled { opacity: 0.5; }
-.status { font-size: 11.5px; color: #78716c; }
+.status { font-size: 11.5px; color: #8a7a63; }
 
-.section-card { background: #1c1917; border: 1px solid #292524; border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; }
+.section-card { background: #221c15; border: 1px solid #332c22; border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; }
 .section-card .head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; gap: 10px; }
-.section-card h2 { font-size: 13px; margin: 0; color: #fbbf24; text-transform: uppercase; letter-spacing: 0.05em; }
-.section-card .updated { font-size: 11px; color: #6b6560; margin-bottom: 6px; }
-.section-card .errtext { font-size: 12px; color: #f87171; margin-bottom: 6px; }
-p.body { font-size: 14px; line-height: 1.6; color: #d6d3d1; margin: 0 0 10px; }
-p.body b { color: #fde68a; }
-.empty-inline { color: #6b6560; font-size: 12.5px; font-style: italic; }
+.section-card h2 { font-size: 13px; margin: 0; color: #e0b872; text-transform: uppercase; letter-spacing: 0.05em; }
+.section-card .updated { font-size: 11px; color: #7a6b55; margin-bottom: 6px; }
+.section-card .errtext { font-size: 12px; color: #e08a7a; margin-bottom: 6px; }
+p.body { font-size: 14px; line-height: 1.6; color: #d9cdbc; margin: 0 0 10px; }
+p.body strong, p.body b { color: #e0b872; font-weight: 600; }
+.empty-inline { color: #7a6b55; font-size: 12.5px; font-style: italic; }
 
-.archive-item { width: 100%; text-align: left; background: #1c1917; border: 1px solid #292524; border-radius: 8px; padding: 12px 14px; margin-bottom: 8px; color: inherit; font-family: inherit; cursor: pointer; }
-.archive-item .t { color: #fde68a; font-size: 14px; font-weight: 500; }
-.archive-item .d { color: #78716c; font-size: 11.5px; margin-top: 2px; }
-.back { color: #78716c; font-size: 12.5px; background: none; border: none; margin-bottom: 10px; cursor: pointer; }
+.archive-item { width: 100%; text-align: left; background: #221c15; border: 1px solid #332c22; border-radius: 8px; padding: 12px 14px; margin-bottom: 8px; color: inherit; font-family: inherit; cursor: pointer; }
+.archive-item .t { color: #e0b872; font-size: 14px; font-weight: 500; }
+.archive-item .d { color: #8a7a63; font-size: 11.5px; margin-top: 2px; }
+.back { color: #8a7a63; font-size: 12.5px; background: none; border: none; margin-bottom: 10px; cursor: pointer; }
 
-textarea, input[type=text] { width: 100%; background: #1c1917; border: 1px solid #292524; color: #e7e5e4; border-radius: 6px; padding: 9px; font-size: 13.5px; font-family: inherit; }
+textarea, input[type=text] { width: 100%; background: #221c15; border: 1px solid #332c22; color: #e8e1d4; border-radius: 6px; padding: 9px; font-size: 13.5px; font-family: inherit; }
 textarea { height: 110px; }
-.note-hint { font-size: 12px; color: #78716c; margin-bottom: 10px; line-height: 1.5; }
-.note-item { background: #1c1917; border: 1px solid #292524; border-radius: 6px; padding: 10px 12px; margin-bottom: 8px; }
-.note-item .top { display: flex; justify-content: space-between; font-size: 11.5px; color: #78716c; margin-bottom: 4px; }
-.note-item .top button { background: none; border: none; color: #f87171; font-size: 11.5px; cursor: pointer; }
-.list-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #2a2320; font-size: 13.5px; }
+.note-hint { font-size: 12px; color: #8a7a63; margin-bottom: 10px; line-height: 1.5; }
+.note-item { background: #221c15; border: 1px solid #332c22; border-radius: 6px; padding: 10px 12px; margin-bottom: 8px; }
+.note-item .top { display: flex; justify-content: space-between; font-size: 11.5px; color: #8a7a63; margin-bottom: 4px; }
+.note-item .top button { background: none; border: none; color: #e08a7a; font-size: 11.5px; cursor: pointer; }
+.list-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #2e2820; font-size: 13.5px; }
 
-.h3sec { color: #fbbf24; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.06em; margin: 16px 0 6px; }
-.section-title { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: #8a7c72; margin: 20px 0 8px; }
+.h3sec { color: #e0b872; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.06em; margin: 16px 0 6px; }
+.section-title { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: #9a8a72; margin: 20px 0 8px; }
 
 /* Real print stylesheet - a normal deployed page, so window.print() and Safari's
-   Share > Print work without any of the sandbox/popup restrictions we hit in the artifact. */
+   Share > Print work without any of the sandbox/popup restrictions we hit in the artifact.
+   Uses a genuinely visible warm cream and dark burgundy/brown, not colors so close to
+   pure black/white that they still read as monochrome on paper. */
 @media print {
-  body { background: #fff !important; color: #1c1917 !important; }
+  body { background: #f7efdd !important; color: #3d2f1f !important; }
   .no-print, button, nav { display: none !important; }
-  .section-card { border: none !important; background: #fff !important; page-break-inside: avoid; margin-bottom: 20px; }
-  .h3sec, .section-card h2 { color: #7f1d1d !important; border-bottom: 1px solid #ccc; padding-bottom: 4px; }
-  p.body { color: #1c1917 !important; }
-  p.body b { color: #000 !important; }
+  .doc-title { display: block !important; }
+  .doc-title h1 { color: #8b3a2b !important; }
+  .doc-title .doc-date { color: #6b5d47 !important; }
+  .section-card { border: none !important; background: transparent !important; page-break-inside: avoid; margin-bottom: 20px; }
+  .h3sec, .section-card h2 { color: #8b3a2b !important; border-bottom: 1px solid #d8b98a; padding-bottom: 4px; }
+  p.body { color: #3d2f1f !important; }
+  p.body strong, p.body b { color: #8b5a1f !important; }
   .updated, .empty-inline, .errtext, .status { display: none !important; }
 }
