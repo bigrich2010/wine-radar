@@ -31,7 +31,9 @@ PRIMARY FOCUS: Bordeaux, Barolo, and Burgundy. This is deliberate - the domestic
 
 EVERY specific claim (a piece an author wrote, an argument they made, a wine they named) must include the actual source URL and approximate date, not just the author's name. If you cannot find a working link for a claim, do not include it as fact - note it as unverified or leave it out.
 
-For EACH active author:
+SEARCH BUDGET: aim for roughly 5-6 searches total for this whole section, not one per writer regardless of tier. Prioritise the Tier A writers first - there are 5 of them, and they warrant real depth. Only spend remaining searches on Tier B/C/D writers if something specific about them is worth checking (e.g. a ranking question flagged last issue). Skipping most Tier B/C/D writers most cycles is fine and expected - depth on the writers who actually matter beats shallow, repetitive coverage of all ten every single time.
+
+For EACH author you do search:
 - Identify their most significant recent piece(s) on Bordeaux, Barolo or Burgundy specifically, with a real URL, and summarise the actual argument in your own words.
 - Name specific wines, producers, vintages or price points worth investigating.
 - Distinguish clearly between reported fact, the author's own opinion, and your interpretation - label which is which.
@@ -63,6 +65,8 @@ Finish with:
   { key: 'vintage_watch', label: 'Vintage & Producer Watch — Emily\u2019s Take', maxTokens: 2800, instruction: `Produce a standing vintage AND producer assessment across the priority regions below - this is a reference the collector checks back on, not a one-off article. Search each region's current/recent vintage individually, and check named producers individually too.
 
 REGIONS TO COVER: Margaret River (Cabernet and Chardonnay), Burgundy (2024 and any other current release), Barolo (2021 and any other current release), Bordeaux left bank (current release), Champagne (current release if notable), Yarra Valley / Mornington Peninsula / Tasmania cool-climate Pinot and Chardonnay.
+
+SEARCH BUDGET: aim for roughly 6-8 searches total for this whole section, not one per region plus one per named producer every cycle (that's 10+ individual searches and is not necessary most of the time). Use judgement: prioritise regions/producers most likely to have genuine news right now (e.g. a known current release window, something flagged as unresolved last issue) over mechanically re-checking everything. If a region or producer has nothing new to report, it's fine to skip searching it this cycle and just say "no change since last issue" based on what's already known.
 
 NAMED PRODUCERS TO CHECK SPECIFICALLY (Barolo/Piedmont, in addition to the full watchlist provided below): Massolino, Paolo Scavino, Gaja (technically Barbaresco - note this distinction if it comes up rather than blurring it), Monchiero. Also actively search for lesser-known, currently-excellent producers in these regions that aren't on the list yet - the collector wants genuine discoveries here, not just the famous names repeated back.
 
