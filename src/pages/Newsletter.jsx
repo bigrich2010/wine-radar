@@ -12,6 +12,7 @@ const SECTION_DEFS = [
   { key: 'deepdive', label: 'Deep Dive' },
   { key: 'perth', label: 'Around Perth' },
   { key: 'hitlist', label: 'Hit List & Coming Up' },
+  { key: 'critic_highlights', label: 'Critic Highlights — Top Scores This Cycle' },
   { key: 'substack_intel', label: 'Substack Intelligence — Authors & Overlap' },
   { key: 'substack_leads', label: 'Substack Intelligence — Buying Leads' },
   { key: 'vintage_watch', label: 'Vintage & Producer Watch — Emily\u2019s Take' },
@@ -124,8 +125,14 @@ export default function Newsletter() {
     window.print()
   }
 
+  const today = new Date().toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+
   return (
     <div>
+      <div className="doc-title">
+        <h1>🍷 Wine Radar</h1>
+        <div className="doc-date">{today}</div>
+      </div>
       <div className="row no-print">
         <button className="primary" onClick={generateAll} disabled={runningAll || !!generatingKey}>
           {runningAll ? `Generating ${allProgress.done + 1} of ${allProgress.total}…` : 'Generate Full Issue'}
