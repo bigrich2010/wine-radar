@@ -22,6 +22,9 @@ export default function Newsletter() {
   const [generatingKey, setGeneratingKey] = useState(null) // for UI display only - not the actual guard
   const [statusMsg, setStatusMsg] = useState('')
   const [saving, setSaving] = useState(false)
+  const [runningAll, setRunningAll] = useState(false)
+  const [allProgress, setAllProgress] = useState({ done: 0, total: 0 })
+  const runningAllRef = useRef(false) // synchronous guard, same pattern as the section generator itself
 
   // The real concurrency guard lives here, in a ref - synchronous and unaffected by React's
   // render/state timing, unlike the `generatingKey` state above (which is display-only).
@@ -49,6 +52,24 @@ export default function Newsletter() {
       setStatusMsg(`${result.label} updated.`)
     }
     setGeneratingKey(null)
+    return result
+  }
+
+  async function generateAll() {
+    if (runningAllRef.current) return // synchronous guard - a double-tap on Generate All can't start two loops
+    runningAllRef.current = true
+    setRunningAll(true)
+    setAllProgress({ done: 0, total: SECTION_DEFS.length })
+    for (let i = 0; i < SECTION_DEFS.length; i++) {
+      setAllProgress({ done: i, total: SECTION_DEFS.length })
+      // generateSection already holds its own single-call lock via generatorRef - this loop
+      // just calls it repeatedly and waits for each one to genuinely finish before starting
+      // the next, rather than firing all 11 at once.
+      await generateSection(SECTION_DEFS[i].key)
+    }
+    setAllProgress({ done: SECTION_DEFS.length, total: SECTION_DEFS.length })
+    runningAllRef.current = false
+    setRunningAll(false)
   }
 
   async function saveAsIssue() {
@@ -83,15 +104,18 @@ export default function Newsletter() {
   return (
     <div>
       <div className="row no-print">
-        <button className="secondary" onClick={saveAsIssue} disabled={saving}>{saving ? 'Saving…' : 'Save current as Issue'}</button>
-        <button className="secondary" onClick={printCurrent}>Print / Save as PDF</button>
+        <button className="primary" onClick={generateAll} disabled={runningAll || !!generatingKey}>
+          {runningAll ? `Generating ${allProgress.done + 1} of ${allProgress.total}…` : 'Generate Full Issue'}
+        </button>
+        <button className="secondary" onClick={saveAsIssue} disabled={saving || runningAll}>{saving ? 'Saving…' : 'Save current as Issue'}</button>
+        <button className="secondary" onClick={printCurrent} disabled={runningAll}>Print / Save as PDF</button>
       </div>
       {statusMsg && <div className="status" style={{ marginBottom: 12 }}>{statusMsg}</div>}
 
       {SECTION_DEFS.map(def => {
         const s = sections[def.key]
         const busy = generatingKey === def.key
-        const anyBusy = !!generatingKey
+        const anyBusy = !!generatingKey || runningAll
         return (
           <div className="section-card" key={def.key}>
             <div className="head">
