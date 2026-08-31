@@ -17,8 +17,19 @@ const SECTION_DEFS = [
   { key: 'vintage_watch', label: 'Vintage & Producer Watch — Emily\u2019s Take' },
 ]
 
+const STORAGE_KEY = 'wine-radar-draft-sections'
+
+function loadSavedSections() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    return raw ? JSON.parse(raw) : {}
+  } catch (e) {
+    return {} // corrupted or unavailable storage shouldn't crash the app, just start fresh
+  }
+}
+
 export default function Newsletter() {
-  const [sections, setSections] = useState({}) // key -> { text, updated_at, queries, error }
+  const [sections, setSections] = useState(loadSavedSections) // key -> { text, updated_at, queries, error }
   const [generatingKey, setGeneratingKey] = useState(null) // for UI display only - not the actual guard
   const [statusMsg, setStatusMsg] = useState('')
   const [saving, setSaving] = useState(false)
@@ -31,6 +42,18 @@ export default function Newsletter() {
   const generatorRef = useRef(null)
   if (!generatorRef.current) generatorRef.current = createSectionGenerator(fetch.bind(window))
   const savingRef = useRef(false)
+
+  // Persist to localStorage on every change - this is what actually fixes losing
+  // everything when navigating to Archive/Sources and back. A real deployed page,
+  // unlike the earlier sandboxed artifact, so localStorage is the right tool here.
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(sections))
+    } catch (e) {
+      // Storage full or unavailable - not fatal, just means this session's progress
+      // won't survive navigation, which is the pre-existing behavior anyway.
+    }
+  }, [sections])
 
   async function generateSection(key) {
     setStatusMsg('')
