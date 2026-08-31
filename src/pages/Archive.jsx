@@ -27,7 +27,7 @@ export default function Archive() {
           <button className="secondary" onClick={() => window.print()}>Print / Save as PDF</button>
         </div>
         <div className="section-card">
-          <h2 style={{ textTransform: 'none', color: '#fde68a', fontSize: 16 }}>{open.title}</h2>
+          <h2 style={{ textTransform: 'none', color: '#e0b872', fontSize: 16 }}>{open.title}</h2>
           {(open.sections || []).map(s => (
             <div key={s.key}>
               <h3 className="h3sec">{s.label}</h3>
