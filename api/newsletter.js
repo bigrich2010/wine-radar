@@ -16,7 +16,7 @@ export const SECTIONS = [
   { key: 'deepdive', label: 'Deep Dive', instruction: 'Write "## Deep Dive" - find one substantive piece of narrative wine journalism and summarise it properly in your own words across a few paragraphs. Explain why it matters, not just what it says.' },
   { key: 'perth', label: 'Around Perth', instruction: 'Write "## Around Perth" - Lamont\'s Cottesloe and WA-local happenings, only upcoming events given today\'s date, never past ones.' },
   { key: 'hitlist', label: 'Hit List & Coming Up', instruction: 'Write "## Hit List — Things to Try" and "## Coming Up". If recent purchases are provided below, actively build the Hit List around them - name the purchase and build outward from it - rather than just avoiding repeats. Coming Up: release dates, allocations, events for watchlist producers.' },
-  { key: 'substack_intel', label: 'Substack Intelligence — Authors & Overlap', instruction: `Produce an intelligence briefing from the tracked Substack authors listed below - not a newsletter summary. Read across each author's recent output and extract what's genuinely useful, not a list of what they published.
+  { key: 'substack_intel', label: 'Substack Intelligence — Authors & Overlap', maxTokens: 3000, instruction: `Produce an intelligence briefing from the tracked Substack authors listed below - not a newsletter summary. Read across each author's recent output and extract what's genuinely useful, not a list of what they published.
 
 PRIMARY FOCUS: Bordeaux, Barolo, and Burgundy. This is deliberate - the domestic Hit List, Margaret River, and Around Perth sections elsewhere in this newsletter already cover Australian wine thoroughly using Halliday/Ray Jordan/Winefront. Substack's actual value is the opposite: these authors are the primary source for Bordeaux, Barolo and Burgundy specifically, regions where Australian critics have little presence. Do not spend space re-covering Australian wine here unless an author is explicitly drawing a comparison between an Australian wine and one of these three regions (e.g. Margaret River Cabernet vs Bordeaux, Australian Pinot vs Burgundy) - that comparison IS in scope and valuable.
 
@@ -36,7 +36,7 @@ OVERLAP (the most valuable part - do not skip it):
 AUTHOR RANKING: For each author, note whether their current tier (A-D) still seems right based on this cycle's Bordeaux/Barolo/Burgundy output specifically, and their strength area. If a ranking should change, say why, citing the actual piece that justifies it.
 
 Write this as "## Substack Intelligence — Authors & Overlap" with clear sub-headers for the overlap themes first, then author notes, then ranking changes.` },
-  { key: 'substack_leads', label: 'Substack Intelligence — Buying Leads', instruction: `Based on the same tracked Substack authors, produce Bordeaux/Barolo/Burgundy-focused buying-lead intelligence for "## Substack Intelligence — Buying Leads". This is deliberately international-focused - the domestic Hit List elsewhere in this newsletter already covers Australian buying opportunities.
+  { key: 'substack_leads', label: 'Substack Intelligence — Buying Leads', maxTokens: 2600, instruction: `Based on the same tracked Substack authors, produce Bordeaux/Barolo/Burgundy-focused buying-lead intelligence for "## Substack Intelligence — Buying Leads". This is deliberately international-focused - the domestic Hit List elsewhere in this newsletter already covers Australian buying opportunities.
 
 For every genuinely interesting Bordeaux, Barolo or Burgundy wine or producer surfaced, record: producer/wine/vintage, approximate price, the source author AND a real URL, what they actually said, any independent critical cross-check (Jane Anson, Galloni/Vinous, Kerin O'Keefe, Jancis Robinson, Decanter), and a clear call: BUY / WATCH / PASS / INVESTIGATE. For Australian availability, check the relevant specialist directly rather than guessing: Mountain & Row for Barolo/Piedmont, Boccaccio/Rathdowne/Vintrepid/Heart & Soil for Burgundy, 1533 Cellars/Ethereal for either, Prince Wine Store as a broad check, MW Wines if it's a mature/back-vintage wine, Langtons for auction/secondary market (only report Langtons results that are live/current listings - Langtons has extensive press about past completed auctions and historical collections, which must never be presented as current availability). If unconfirmed, say so.
 
@@ -51,7 +51,7 @@ Finish with:
 ## BUYING OPPORTUNITIES
 ## NOISE — THINGS TO IGNORE
 ## THE EMILY TAKE (a concise, opinionated read on what Bordeaux/Barolo/Burgundy Substack intelligence is telling us that the major critics alone wouldn't show)` },
-  { key: 'vintage_watch', label: 'Vintage & Producer Watch — Emily\u2019s Take', instruction: `Produce a standing vintage AND producer assessment across the priority regions below - this is a reference the collector checks back on, not a one-off article. Search each region's current/recent vintage individually, and check named producers individually too.
+  { key: 'vintage_watch', label: 'Vintage & Producer Watch — Emily\u2019s Take', maxTokens: 2800, instruction: `Produce a standing vintage AND producer assessment across the priority regions below - this is a reference the collector checks back on, not a one-off article. Search each region's current/recent vintage individually, and check named producers individually too.
 
 REGIONS TO COVER: Margaret River (Cabernet and Chardonnay), Burgundy (2024 and any other current release), Barolo (2021 and any other current release), Bordeaux left bank (current release), Champagne (current release if notable), Yarra Valley / Mornington Peninsula / Tasmania cool-climate Pinot and Chardonnay.
 
@@ -84,7 +84,9 @@ SOURCE TIERS:
 - Tier 3, Narrative journalism
 - Tier 4, Local/actionable: read broker/merchant language skeptically
 
-Write ONLY the single section requested, starting with its "## " heading. Do not write other sections. Paraphrase everything, never quote more than a few words verbatim. Be specific: name producers, vintages, scores, critics, dates. Do not fabricate. If there's genuinely nothing new, say so briefly rather than padding.`
+Write ONLY the single section requested, starting with its "## " heading. Do not write other sections. Paraphrase everything, never quote more than a few words verbatim. Be specific: name producers, vintages, scores, critics, dates. Do not fabricate. If there's genuinely nothing new, say so briefly rather than padding.
+
+CRITICAL: your response must contain ONLY the finished, polished section - nothing else. Do not narrate your research process. Do not write things like "Let me check...", "I now have...", "Good, I've confirmed...", or any other commentary about what you're doing or have found. If you need to think through what to search for or how to interpret results, do that silently - only the final, publication-ready text should appear in your response.`
 
 function isRetryableStatus(status) {
   return status === 429 || (status >= 500 && status <= 599)
@@ -184,7 +186,7 @@ export function buildHandler({ createClient: createClientDep, fetchImpl }) {
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
-        max_tokens: 1800,
+        max_tokens: sectionDef.maxTokens || 1800,
         system: SYSTEM_PROMPT_BASE,
         messages: [{ role: 'user', content: prompt }],
         tools: [{ type: 'web_search_20250305', name: 'web_search' }],
@@ -207,7 +209,14 @@ export function buildHandler({ createClient: createClientDep, fetchImpl }) {
       .filter(b => b.type === 'server_tool_use' && b.name === 'web_search')
       .map(b => b.input && b.input.query)
       .filter(Boolean)
-    const text = textBlocks.join('\n\n').trim()
+    // Join with a space, not a forced paragraph break. When Claude does multiple searches
+    // within one section, it sometimes writes its answer in fragments between tool calls -
+    // joining those with '\n\n' was forcing artificial paragraph breaks mid-sentence (e.g.
+    // splitting "Jukes has died at 58" across three separate paragraphs). Genuine paragraph
+    // breaks the model intends WITHIN a single block (its own internal '\n\n') are left
+    // completely untouched - only trimming each block's own leading/trailing whitespace
+    // before stitching the blocks together, so we don't collapse real paragraph structure.
+    const text = textBlocks.map(t => t.trim()).join(' ').trim()
     const truncated = data.stop_reason === 'max_tokens'
 
     if (!text) {
