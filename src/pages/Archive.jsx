@@ -31,6 +31,7 @@ export default function Archive() {
           {(open.sections || []).map(s => (
             <div key={s.key}>
               <h3 className="h3sec">{s.label}</h3>
+              {s.truncated && <div className="errtext">⚠️ This section was cut off due to length when originally generated.</div>}
               <ReactMarkdown components={{ h2: () => null, p: ({ children }) => <p className="body">{children}</p> }}>
                 {s.text}
               </ReactMarkdown>
