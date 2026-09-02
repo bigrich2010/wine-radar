@@ -102,7 +102,7 @@ export default function Newsletter() {
     setSaving(true)
     try {
       const snapshot = SECTION_DEFS
-        .map(def => sections[def.key] ? { key: def.key, label: def.label, text: sections[def.key].text, queries: sections[def.key].queries, updated_at: sections[def.key].updated_at } : null)
+        .map(def => sections[def.key] ? { key: def.key, label: def.label, text: sections[def.key].text, queries: sections[def.key].queries, updated_at: sections[def.key].updated_at, truncated: sections[def.key].truncated } : null)
         .filter(s => s && s.text)
       if (snapshot.length === 0) {
         setStatusMsg('Nothing generated yet to save.')
@@ -156,6 +156,7 @@ export default function Newsletter() {
             </div>
             {s?.updated_at && <div className="updated">Updated {s.updated_at}{s.queries?.length ? ` · ${s.queries.length} searches` : ''}</div>}
             {s?.error && <div className="errtext">{s.error}</div>}
+            {s?.truncated && !s?.error && <div className="errtext">⚠️ This response was cut off due to length — hit Refresh to try again, ideally getting a more complete version.</div>}
             {s?.text ? (
               <ReactMarkdown
                 components={{
