@@ -10,9 +10,9 @@ import { createClient } from '@supabase/supabase-js'
 export const SECTIONS = [
   { key: 'industry', label: 'Industry Watch', instruction: 'Write "## Industry Watch" - structural/data news from Wine Australia, Winetitles, ozwinereview.com. 3-4 searches.' },
   { key: 'diverge', label: 'Where the Critics Diverge', instruction: 'Write "## Where the Critics Diverge" - find a genuine case where Tier 1 (Winefront, Erin Larkin) and Tier 2 (Halliday, Ray Jordan, Jukes) disagree on the same wine this cycle. Name the wine, both scores, both critics. If nothing genuinely diverges, say so briefly rather than manufacturing a gap.' },
-  { key: 'margaretriver', label: 'Margaret River', maxTokens: 2400, instruction: 'Write "## Margaret River" - search individually for each active watchlist producer in this region. Prioritise anything genuinely new. This region has many watchlist producers (Moss Wood, Cullen, Woodlands, Pierro, Leeuwin, Vasse Felix) - if covering all of them in full depth would run long, prioritise the 3-4 with the most genuinely new news this cycle and give the rest a brief one-line update rather than cutting off mid-entry.' },
-  { key: 'burgundy', label: 'Burgundy, Champagne & Beyond', maxTokens: 2400, instruction: 'Write "## Burgundy, Champagne & Beyond" - Burgundy, Champagne, and cool-climate Pinot/Chardonnay producers from the watchlist. Search individually per producer, not combined. If covering every producer in full depth would run long, prioritise the ones with the most genuinely new news this cycle and give the rest a brief one-line update rather than cutting off mid-entry.' },
-  { key: 'barolo_bordeaux', label: 'Barolo & Bordeaux', instruction: 'Write "## Barolo & Bordeaux". This is a priority region, not a filler section - go deep. For Barolo: Massolino specifically (the collector holds Parafada and Parussi), plus the broader Barolo/Piedmont picture, weighting Kerin O\u2019Keefe (Wine Enthusiast) and Antonio Galloni/Vinous as the relevant specialists - the general Tier 1-4 system does not apply here, these are the right names. For Bordeaux: Pontet-Canet (the collector buys this on regular allocation) and the left bank generally, weighting Jane Anson and Galloni/Vinous. Search individually per producer/critic, not combined. Name specific vintages and scores where found.' },
+  { key: 'margaretriver', label: 'Margaret River', maxTokens: 2400, instruction: 'Write "## Margaret River" - search individually for each active watchlist producer in this region. Prioritise anything genuinely new.\n\nSEARCH BUDGET: aim for roughly 5-6 searches total, not one per producer regardless of whether there is news. Prioritise the 2-3 producers most likely to have genuine news this cycle and cover them properly, in real depth. For the rest, a brief one-line "no change since last update" is fine and expected - do not skim all six producers shallowly.\n\nIf you genuinely cannot finish everything worth covering within a reasonable length, STOP CLEANLY after finishing the entries you have started - never cut off mid-sentence or mid-entry. End with a short line naming which producers you did not get to this cycle, e.g. "Still to come next update: Woodlands, Pierro." That is far better than a longer response that gets cut off partway through.' },
+  { key: 'burgundy', label: 'Burgundy, Champagne & Beyond', maxTokens: 2400, instruction: 'Write "## Burgundy, Champagne & Beyond" - Burgundy, Champagne, and cool-climate Pinot/Chardonnay producers from the watchlist. Search individually per producer, not combined.\n\nSEARCH BUDGET: aim for roughly 5-6 searches total, not one per producer regardless of whether there is news. Prioritise the 2-3 producers most likely to have genuine news this cycle and cover them properly, in real depth. For the rest, a brief one-line "no change since last update" is fine and expected - do not skim every producer shallowly.\n\nIf you genuinely cannot finish everything worth covering within a reasonable length, STOP CLEANLY after finishing the entries you have started - never cut off mid-sentence or mid-entry. End with a short line naming which producers you did not get to this cycle, e.g. "Still to come next update: Giant Steps, Bindi." That is far better than a longer response that gets cut off partway through.' },
+  { key: 'barolo_bordeaux', label: 'Barolo & Bordeaux', maxTokens: 2400, instruction: 'Write "## Barolo & Bordeaux". This is a priority region, not a filler section - go deep. For Barolo: Massolino specifically (the collector holds Parafada and Parussi), plus the broader Barolo/Piedmont picture, weighting Kerin O\u2019Keefe (Wine Enthusiast) and Antonio Galloni/Vinous as the relevant specialists - the general Tier 1-4 system does not apply here, these are the right names. For Bordeaux: Pontet-Canet (the collector buys this on regular allocation) and the left bank generally, weighting Jane Anson and Galloni/Vinous. Search individually per producer/critic, not combined. Name specific vintages and scores where found.\n\nSEARCH BUDGET: aim for roughly 5-6 searches total, not unlimited individual searches per producer/critic combination. Prioritise whichever of Massolino or Pontet-Canet has more genuinely new news this cycle and cover it in real depth; the other can get a brief "no change since last update" if nothing new turns up.\n\nIf you genuinely cannot finish everything worth covering within a reasonable length, STOP CLEANLY after finishing the entry you have started - never cut off mid-sentence. End with a short line naming what you did not get to this cycle, e.g. "Still to come next update: broader Piedmont vintage picture." That is far better than a longer response that gets cut off partway through.' },
   { key: 'deepdive', label: 'Deep Dive', instruction: 'Write "## Deep Dive" - find one substantive piece of narrative wine journalism and summarise it properly in your own words across a few paragraphs. Explain why it matters, not just what it says.' },
   { key: 'perth', label: 'Around Perth', instruction: 'Write "## Around Perth" - Lamont\'s Cottesloe and WA-local happenings, only upcoming events given today\'s date, never past ones.' },
   { key: 'hitlist', label: 'Hit List & Coming Up', instruction: 'Write "## Hit List — Things to Try" and "## Coming Up". If recent purchases are provided below, actively build the Hit List around them - name the purchase and build outward from it - rather than just avoiding repeats. Coming Up: release dates, allocations, events for watchlist producers.' },
@@ -112,47 +112,27 @@ function describeError(status, data) {
   return `HTTP ${status} - unexpected response`
 }
 
-// Prompt instructions alone don't reliably stop this - even when explicitly told not to
-// narrate, the model can slip back into "Let me check..." / "I now have..." under enough
-// search-heavy pressure. This is a deterministic backstop: strip sentences that are pure
-// meta-commentary about the model's own research process, leaving actual content intact.
-// Deliberately conservative - only matches sentences that clearly START with these patterns,
-// so a sentence containing real content (even if it mentions "I now have a divergence")
-// isn't accidentally gutted for using similar words mid-sentence.
 const NARRATION_PATTERNS = [
-  // Broad, not narrow: this editorial voice is written third-person/imperative and
-  // essentially never uses first-person "I" to describe its own process or findings.
-  // Rather than matching exact phrasings seen once (which don't generalise - the model
-  // rephrases differently every run), this catches the underlying shape: an optional
-  // filler word/punctuation lead-in, then "I" + a self-referential verb, regardless of
-  // what specific object or phrasing follows.
   /^(now|so|good|ok|okay)?[\s.,:—\-]*i\s+(now\s+|already\s+)?(have|need|am|will|'ve|'m|should|can)\b/i,
   /^let me\b/i,
-  /^(good|ok|okay)[\s.,:—\-]+$/i, // standalone filler like "Good." or "OK,"
+  /^(good|ok|okay)[\s.,:—\-]+$/i,
   /^the picture is (now )?clear\b/i,
   /^key facts confirmed\b/i,
   /^my job (now )?is to\b/i,
 ]
 
 export function stripNarration(text) {
-  // Process paragraph-by-paragraph (splitting on real blank lines) so that genuine
-  // paragraph structure survives - only whitespace WITHIN a paragraph gets normalised
-  // when sentences are rejoined, never the blank lines BETWEEN paragraphs.
   const paragraphs = text.split(/\n\s*\n+/)
   const cleaned = paragraphs.map(para => {
     const sentences = para.split(/(?<=[.!?])\s+/)
     const kept = sentences.map(s => {
       const trimmed = s.trim()
       if (!NARRATION_PATTERNS.some(p => p.test(trimmed))) return trimmed
-      // The narration is often just a lead-in clause before real content, e.g.
-      // "The picture is clear and documented: Cullen scored well across critics."
-      // Salvage whatever follows a colon rather than losing real content along
-      // with the narration that happened to introduce it.
       const colonIndex = trimmed.indexOf(':')
       if (colonIndex !== -1 && colonIndex < trimmed.length - 1) {
         return trimmed.slice(colonIndex + 1).trim()
       }
-      return '' // pure narration with nothing salvageable
+      return ''
     }).filter(Boolean)
     return kept.join(' ').trim()
   }).filter(p => p.length > 0)
@@ -194,10 +174,6 @@ export function buildHandler({ createClient: createClientDep, fetchImpl }) {
       supabase.from('issues').select('*').order('created_at', { ascending: false }).limit(1),
     ])
 
-    // Each of these can fail independently (RLS misconfiguration, network blip) without
-    // throwing - Supabase returns { data: null, error }. Silently ignoring that error and
-    // proceeding with an empty list would waste a real, paid API call on a context-less
-    // prompt with no way to tell why. Collect and surface them instead.
     const dbChecks = [
       ['watchlist', watchlistRes], ['sources', sourcesRes], ['substack_writers', writersRes],
       ['purchases', purchasesRes], ['captures', capturesRes], ['issues', lastIssuesRes],
@@ -269,15 +245,6 @@ export function buildHandler({ createClient: createClientDep, fetchImpl }) {
       .filter(b => b.type === 'server_tool_use' && b.name === 'web_search')
       .map(b => b.input && b.input.query)
       .filter(Boolean)
-    // Join with a space, not a forced paragraph break. When Claude does multiple searches
-    // within one section, it sometimes writes its answer in fragments between tool calls -
-    // joining those with '\n\n' was forcing artificial paragraph breaks mid-sentence (e.g.
-    // splitting "Jukes has died at 58" across three separate paragraphs). Genuine paragraph
-    // breaks the model intends WITHIN a single block (its own internal '\n\n') are left
-    // completely untouched - only trimming each block's own leading/trailing whitespace
-    // before stitching the blocks together, so we don't collapse real paragraph structure.
-    // stripNarration is a deterministic backstop for cases where the prompt instruction
-    // alone doesn't stop the model narrating its own research process (see function above).
     const text = stripNarration(textBlocks.map(t => t.trim()).join(' ').trim())
     const truncated = data.stop_reason === 'max_tokens'
 
