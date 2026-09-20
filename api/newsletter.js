@@ -174,7 +174,7 @@ export function buildHandler({ createClient: createClientDep, fetchImpl }) {
       supabase.from('substack_writers').select('*').eq('active', true),
       supabase.from('purchases').select('*').order('created_at', { ascending: false }).limit(20),
       supabase.from('captures').select('*').eq('consumed', false),
-      supabase.from('issues').select('*').order('created_at', { ascending: false }).limit(1),
+      supabase.from('issues').select('*').order('created_at', { ascending: false }).limit(10),
     ])
 
     const dbChecks = [
@@ -199,8 +199,11 @@ export function buildHandler({ createClient: createClientDep, fetchImpl }) {
     const purchasesText = (purchases || []).map(p => `- ${p.description}`).join('\n')
     const capturesText = (captures || []).map(c => `- ${c.raw_text}`).join('\n')
 
-    const lastIssue = (lastIssues && lastIssues[0]) || null
-    const priorSection = lastIssue ? (lastIssue.sections || []).find(s => s.key === sectionKey) : null
+    let priorSection = null
+    for (const issue of (lastIssues || [])) {
+      const match = (issue.sections || []).find(s => s.key === sectionKey)
+      if (match) { priorSection = match; break }
+    }
 
     const today = new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })
 
