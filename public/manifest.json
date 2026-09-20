@@ -1,0 +1,13 @@
+{
+  "name": "Wine Radar",
+  "short_name": "Wine Radar",
+  "description": "Bordeaux, Barolo, Burgundy and Margaret River intelligence, built for one collector.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#18140f",
+  "theme_color": "#18140f",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
