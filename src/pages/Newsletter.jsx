@@ -7,7 +7,7 @@ const SECTION_DEFS = [
   { key: 'industry', label: 'Industry Watch' },
   { key: 'diverge', label: 'Where the Critics Diverge' },
   { key: 'margaretriver', label: 'Margaret River' },
-  { key: 'burgundy', label: 'Burgundy, Champagne & Beyond' },
+  { key: 'burgundy', label: 'Cool-Climate Pinot & Chardonnay (Australia/NZ)' },
   { key: 'barolo_bordeaux', label: 'Barolo & Bordeaux' },
   { key: 'deepdive', label: 'Deep Dive' },
   { key: 'perth', label: 'Around Perth' },
