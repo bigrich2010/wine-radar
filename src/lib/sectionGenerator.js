@@ -37,7 +37,7 @@ export function createSectionGenerator(fetchImpl) {
       if (!res.ok || json.error) {
         return { ok: false, key, error: json.error || `HTTP ${res.status}` }
       }
-      return { ok: true, key, label: json.label, text: json.text, queries: json.queries, truncated: json.truncated, updated_at: json.updated_at }
+            return { ok: true, key, label: json.label, text: json.text, queries: json.queries, truncated: json.truncated, updated_at: json.updated_at, autoAddedLeads: json.autoAddedLeads }
     } catch (e) {
       return { ok: false, key, error: `Network error: ${e.message}` }
     } finally {
