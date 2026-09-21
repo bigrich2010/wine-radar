@@ -101,7 +101,12 @@ export default function Newsletter() {
         sections: snapshot,
         status: snapshot.length === SECTION_DEFS.length ? 'complete' : 'partial',
       })
-      setStatusMsg(error ? `Save failed: ${error.message}` : 'Saved as an issue in Archive.')
+      if (error) {
+        setStatusMsg(`Save failed: ${error.message}`)
+      } else {
+        setSections({}) // clear so Latest starts fresh next time - only on a genuine successful save
+        setStatusMsg('Saved as an issue in Archive. Latest is cleared for a fresh start.')
+      }
     } finally {
       savingRef.current = false
       setSaving(false)
