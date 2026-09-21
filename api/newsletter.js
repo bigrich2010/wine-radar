@@ -12,7 +12,7 @@ export const SECTIONS = [
   { key: 'industry', label: 'Industry Watch', instruction: 'Write "## Industry Watch" - structural/data news from Wine Australia, Winetitles, ozwinereview.com. 3-4 searches.' },
   { key: 'diverge', label: 'Where the Critics Diverge', instruction: 'Write "## Where the Critics Diverge" - find a genuine case where Tier 1 (Winefront, Erin Larkin) and Tier 2 (Halliday, Ray Jordan, Jukes) disagree on the same wine this cycle. Name the wine, both scores, both critics. If nothing genuinely diverges, say so briefly rather than manufacturing a gap.' },
   { key: 'margaretriver', label: 'Margaret River', maxTokens: 2400, instruction: 'Write "## Margaret River" - search individually for each active watchlist producer in this region. Prioritise anything genuinely new.\n\nSEARCH BUDGET: aim for roughly 5-6 searches total, not one per producer regardless of whether there is news. Prioritise the 2-3 producers most likely to have genuine news this cycle and cover them properly, in real depth. For the rest, a brief one-line "no change since last update" is fine and expected - do not skim all six producers shallowly.\n\nIf you genuinely cannot finish everything worth covering within a reasonable length, STOP CLEANLY after finishing the entries you have started - never cut off mid-sentence or mid-entry. End with a short line naming which producers you did not get to this cycle, e.g. "Still to come next update: Woodlands, Pierro." That is far better than a longer response that gets cut off partway through.' },
-  { key: 'burgundy', label: 'Cool-Climate Pinot & Chardonnay (Australia/NZ)', maxTokens: 2400, instruction: 'Write "## Cool-Climate Pinot & Chardonnay". Covers Tolpuddle, Giaconda, Giant Steps, Bindi, By Farr, Felton Road and similar cool-climate Australian/NZ Pinot and Chardonnay producers from the watchlist - NOT French Burgundy, which is covered separately in Vintage Watch (region-level) and Substack Intelligence (via the tracked international writers). Search individually per producer, not combined.\n\nSEARCH BUDGET: aim for roughly 5-6 searches total, not one per producer regardless of whether there is news. Prioritise the 2-3 producers most likely to have genuine news this cycle and cover them properly, in real depth. For the rest, a brief one-line "no change since last update" is fine and expected - do not skim every producer shallowly.\n\nIf you genuinely cannot finish everything worth covering within a reasonable length, STOP CLEANLY after finishing the entries you have started - never cut off mid-sentence or mid-entry. End with a short line naming which producers you did not get to this cycle, e.g. "Still to come next update: Giant Steps, Bindi." That is far better than a longer response that gets cut off partway through.' },
+  { key: 'burgundy', label: 'Cool-Climate Pinot & Chardonnay (Australia/NZ)', maxTokens: 2400, instruction: 'Write "## Cool-Climate Pinot & Chardonnay". Covers Tolpuddle, Giaconda, Giant Steps, Bindi, By Farr, Felton Road and similar cool-climate Australian/NZ Pinot and Chardonnay producers from the watchlist - NOT French Burgundy, which is covered separately in Vintage & Producer Watch (region-level) and Substack Intelligence (via the tracked international writers). Search individually per producer, not combined.\n\nSEARCH BUDGET: aim for roughly 5-6 searches total, not one per producer regardless of whether there is news. Prioritise the 2-3 producers most likely to have genuine news this cycle and cover them properly, in real depth. For the rest, a brief one-line "no change since last update" is fine and expected - do not skim every producer shallowly.\n\nIf you genuinely cannot finish everything worth covering within a reasonable length, STOP CLEANLY after finishing the entries you have started - never cut off mid-sentence or mid-entry. End with a short line naming which producers you did not get to this cycle, e.g. "Still to come next update: Giant Steps, Bindi." That is far better than a longer response that gets cut off partway through.' },
   { key: 'barolo_bordeaux', label: 'Barolo & Bordeaux', maxTokens: 2400, instruction: 'Write "## Barolo & Bordeaux". This is a priority region, not a filler section - go deep. For Barolo: Massolino specifically (the collector holds Parafada and Parussi), plus the broader Barolo/Piedmont picture, weighting Kerin O\u2019Keefe (Wine Enthusiast) and Antonio Galloni/Vinous as the relevant specialists - the general Tier 1-4 system does not apply here, these are the right names. For Bordeaux: Pontet-Canet (the collector buys this on regular allocation) and the left bank generally, weighting Jane Anson and Galloni/Vinous. Search individually per producer/critic, not combined. Name specific vintages and scores where found.\n\nSEARCH BUDGET: aim for roughly 5-6 searches total, not unlimited individual searches per producer/critic combination. Prioritise whichever of Massolino or Pontet-Canet has more genuinely new news this cycle and cover it in real depth; the other can get a brief "no change since last update" if nothing new turns up.\n\nIf you genuinely cannot finish everything worth covering within a reasonable length, STOP CLEANLY after finishing the entry you have started - never cut off mid-sentence. End with a short line naming what you did not get to this cycle, e.g. "Still to come next update: broader Piedmont vintage picture." That is far better than a longer response that gets cut off partway through.' },
   { key: 'deepdive', label: 'Deep Dive', instruction: 'Write "## Deep Dive" - find one substantive piece of narrative wine journalism and summarise it properly in your own words across a few paragraphs. Explain why it matters, not just what it says.' },
   { key: 'perth', label: 'Around Perth', instruction: 'Write "## Around Perth" - Lamont\'s Cottesloe and WA-local happenings, only upcoming events given today\'s date, never past ones.' },
@@ -217,6 +217,11 @@ export function buildHandler({ createClient: createClientDep, fetchImpl }) {
     const purchasesText = (purchases || []).map(p => `- ${p.description}`).join('\n')
     const capturesText = (captures || []).map(c => `- ${c.raw_text}`).join('\n')
 
+    // Search backward through recent issues for the most recent one that actually
+    // contains this specific section - not just the latest issue overall. A partial
+    // save (only some sections generated that day) would otherwise silently lose dedup
+    // context for whatever wasn't included in that particular save, even when a real
+    // writeup for this section exists a few issues back.
     let priorSection = null
     for (const issue of (lastIssues || [])) {
       const match = (issue.sections || []).find(s => s.key === sectionKey)
@@ -276,6 +281,10 @@ export function buildHandler({ createClient: createClientDep, fetchImpl }) {
       return res.status(502).json({ error: truncated ? 'Ran out of room before writing anything - try again' : 'No content returned' })
     }
 
+    // If this section opted into structured lead recording, write whatever the model
+    // put in its record_leads tool call straight into the database. This is real
+    // structured data the model produced deliberately, not something parsed out of
+    // free-form prose after the fact.
     let autoAddedLeads = 0
     if (sectionDef.recordLeads) {
       try {
@@ -300,6 +309,8 @@ export function buildHandler({ createClient: createClientDep, fetchImpl }) {
       } catch (e) {
         console.warn('Wine Radar: lead extraction threw:', e.message)
       }
+      // A failed extraction never fails the whole section - the prose is still
+      // returned normally, it just won't have auto-added anything this time.
     }
 
     return res.status(200).json({
