@@ -15,14 +15,18 @@ export const SECTIONS = [
   { key: 'barolo_bordeaux', label: 'Barolo & Bordeaux', maxTokens: 2400, instruction: 'Write "## Barolo & Bordeaux". This is a priority region, not a filler section - go deep. For Barolo: Massolino specifically (the collector holds Parafada and Parussi), plus the broader Barolo/Piedmont picture, weighting Kerin O\u2019Keefe (Wine Enthusiast) and Antonio Galloni/Vinous as the relevant specialists - the general Tier 1-4 system does not apply here, these are the right names. For Bordeaux: Pontet-Canet (the collector buys this on regular allocation) and the left bank generally, weighting Jane Anson and Galloni/Vinous. Search individually per producer/critic, not combined. Name specific vintages and scores where found.\n\nSEARCH BUDGET: aim for roughly 5-6 searches total, not unlimited individual searches per producer/critic combination. Prioritise whichever of Massolino or Pontet-Canet has more genuinely new news this cycle and cover it in real depth; the other can get a brief "no change since last update" if nothing new turns up.\n\nIf you genuinely cannot finish everything worth covering within a reasonable length, STOP CLEANLY after finishing the entry you have started - never cut off mid-sentence. End with a short line naming what you did not get to this cycle, e.g. "Still to come next update: broader Piedmont vintage picture." That is far better than a longer response that gets cut off partway through.' },
   { key: 'deepdive', label: 'Deep Dive', instruction: 'Write "## Deep Dive" - find one substantive piece of narrative wine journalism and summarise it properly in your own words across a few paragraphs. Explain why it matters, not just what it says.' },
   { key: 'perth', label: 'Around Perth', instruction: 'Write "## Around Perth" - Lamont\'s Cottesloe and WA-local happenings, only upcoming events given today\'s date, never past ones.' },
-  { key: 'hitlist', label: 'Hit List & Coming Up', instruction: 'Write "## Hit List — Things to Try" and "## Coming Up". If recent purchases are provided below, actively build the Hit List around them - name the purchase and build outward from it - rather than just avoiding repeats. Coming Up: release dates, allocations, events for watchlist producers.' },
+  { key: 'hitlist', label: 'Hit List & Coming Up', maxTokens: 2400, instruction: 'Write "## Hit List — Things to Try" and "## Coming Up". If recent purchases are provided below, actively build the Hit List around them - name the purchase and build outward from it - rather than just avoiding repeats. Coming Up: release dates, allocations, events for watchlist producers.\n\nSEARCH BUDGET: aim for roughly 5-6 searches total across BOTH sub-sections combined, not one per watchlist producer for each. Prioritise the most timely/actionable items - a release landing this week beats a general status check.\n\nIf you genuinely cannot finish both sub-sections within a reasonable length, STOP CLEANLY after finishing whichever entries you have started - never cut off mid-sentence. Finish "## Hit List" properly even if "## Coming Up" has to be shorter or briefly note what is deferred, rather than trailing off mid-list.' },
   { key: 'critic_highlights', label: 'Critic Highlights — Top Scores This Cycle', maxTokens: 2200, instruction: `Write "## Critic Highlights — Top Scores This Cycle". This section is deliberately NOT filtered to the watchlist - every other section in this newsletter only searches producers already being tracked, which means a genuinely exceptional wine from an unfamiliar producer would never surface. This section exists to catch exactly that.
 
 Search broadly across Winefront, Halliday, Ray Jordan, Erin Larkin/Wine Advocate, and Jukes for the highest-scoring Australian wines being reported this cycle (97+ points, or the equivalent top tier for whichever critic uses a different scale) - regardless of whether the producer is already on the watchlist. The goal is genuine discovery: producers or wines the collector may not know about yet.
 
+SEARCH BUDGET: aim for roughly 5-6 searches total. Depth on 3-4 genuinely exceptional finds beats a long, shallow list of every high score you can find.
+
 Apply the same tier discipline as everywhere else: note if a high score is Tier 2-only and unconfirmed by Tier 1, flag genuine cross-critic convergence as a stronger signal, and be willing to say a score looks like grade inflation rather than taking it at face value.
 
 If a wine surfacing here is ALSO a watchlist producer already covered in another section this issue, do not repeat it in full - a one-line cross-reference is enough ("see Margaret River section"). This section's value is specifically the things NOT covered elsewhere.
+
+If you genuinely cannot cover everything worth including within a reasonable length, STOP CLEANLY after finishing the entry you are on - never cut off mid-sentence.
 
 If nothing genuinely new or noteworthy turns up beyond what's already covered in other sections, say so briefly rather than padding with familiar names.` },
   { key: 'substack_intel', label: 'Substack Intelligence — Authors & Overlap', maxTokens: 3000, instruction: `Produce an intelligence briefing from the tracked Substack authors listed below - not a newsletter summary. Read across each author's recent output and extract what's genuinely useful, not a list of what they published.
@@ -46,14 +50,18 @@ OVERLAP (the most valuable part - do not skip it):
 
 AUTHOR RANKING: For each author, note whether their current tier (A-D) still seems right based on this cycle's Bordeaux/Barolo/Burgundy output specifically, and their strength area. If a ranking should change, say why, citing the actual piece that justifies it.
 
-Write this as "## Substack Intelligence — Authors & Overlap" with clear sub-headers for the overlap themes first, then author notes, then ranking changes.` },
+If you genuinely cannot cover every author within a reasonable length, STOP CLEANLY after finishing the author or theme you are on - never cut off mid-sentence. Write this as "## Substack Intelligence — Authors & Overlap" with clear sub-headers for the overlap themes first, then author notes, then ranking changes.` },
   { key: 'substack_leads', label: 'Substack Intelligence — Buying Leads', maxTokens: 2600, instruction: `Based on the same tracked Substack authors, produce Bordeaux/Barolo/Burgundy-focused buying-lead intelligence for "## Substack Intelligence — Buying Leads". This is deliberately international-focused - the domestic Hit List elsewhere in this newsletter already covers Australian buying opportunities.
+
+SEARCH BUDGET: aim for roughly 4-5 searches total - this can mostly build on what Substack Intelligence — Authors & Overlap already found rather than re-searching from scratch. Prioritise depth on 2-3 genuinely strong leads over a long, shallow list.
 
 For every genuinely interesting Bordeaux, Barolo or Burgundy wine or producer surfaced, record: producer/wine/vintage, approximate price, the source author AND a real URL, what they actually said, any independent critical cross-check (Jane Anson, Galloni/Vinous, Kerin O'Keefe, Jancis Robinson, Decanter), and a clear call: BUY / WATCH / PASS / INVESTIGATE. For Australian availability, check the relevant specialist directly rather than guessing: Mountain & Row for Barolo/Piedmont, Boccaccio/Rathdowne/Vintrepid/Heart & Soil for Burgundy, 1533 Cellars/Ethereal for either, Prince Wine Store as a broad check, MW Wines if it's a mature/back-vintage wine, Langtons for auction/secondary market (only report Langtons results that are live/current listings - Langtons has extensive press about past completed auctions and historical collections, which must never be presented as current availability). If unconfirmed, say so.
 
 Do NOT recommend something purely because a Substack author liked it - cross-check where possible. Explicitly watch for the trap one of these authors names directly: a fascinating expensive bottle getting 2,000 words of attention when a cheaper bottle next to it (declassified fruit, a producer's second label, Langhe Nebbiolo instead of Barolo) is the actually better buy. Call this out whenever it appears - it's exactly the kind of signal this section exists to catch.
 
 If recent purchases are provided below, do not recommend those again.
+
+If you genuinely cannot finish all the required closing sections within a reasonable length, STOP CLEANLY after finishing whichever section you are on - never cut off mid-sentence. A shorter but complete response (even skipping NOISE — THINGS TO IGNORE, the least essential section) beats a longer one that gets cut off partway through.
 
 Finish with:
 ## THE 5-10 MOST IMPORTANT SIGNALS (ranked by importance)
@@ -88,7 +96,7 @@ Record where possible: price, vintage, pre-arrival vs in-stock, and any critic q
 
 Be willing to say a heavily-hyped vintage or producer isn't actually worth pursuing yet, or that an under-discussed one is - the point of this section is a real opinion, not consensus-following. If nothing has changed for a region or producer since it was last covered, say so briefly rather than restating the same case again. Do not pad every region - skip any with nothing genuinely new to say this cycle.
 
-Write this as "## Vintage & Producer Watch — Emily's Take" with clear sub-headings, and end with a short "Where to Buy" list of the specific Australian sources that came up.` },
+If you genuinely cannot finish every region and producer within a reasonable length, STOP CLEANLY after finishing whichever entry you are on - never cut off mid-sentence. Write this as "## Vintage & Producer Watch — Emily's Take" with clear sub-headings, and end with a short "Where to Buy" list of the specific Australian sources that came up.` },
 ]
 
 const SYSTEM_PROMPT_BASE = `You are Emily, the most knowledgeable wine professional in Australia, writing for a serious, well-informed collector - not a beginner. Be opinionated, not just a reporter. Disagree with critic consensus when the wine doesn't back it up. Be blunt and willing to take the piss out of overhyped wines or pretentious marketing language - but never sacrifice substance for the joke.
@@ -199,6 +207,11 @@ export function buildHandler({ createClient: createClientDep, fetchImpl }) {
     const purchasesText = (purchases || []).map(p => `- ${p.description}`).join('\n')
     const capturesText = (captures || []).map(c => `- ${c.raw_text}`).join('\n')
 
+    // Search backward through recent issues for the most recent one that actually
+    // contains this specific section - not just the latest issue overall. A partial
+    // save (only some sections generated that day) would otherwise silently lose dedup
+    // context for whatever wasn't included in that particular save, even when a real
+    // writeup for this section exists a few issues back.
     let priorSection = null
     for (const issue of (lastIssues || [])) {
       const match = (issue.sections || []).find(s => s.key === sectionKey)
