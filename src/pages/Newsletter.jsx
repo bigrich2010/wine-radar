@@ -15,7 +15,8 @@ const SECTION_DEFS = [
   { key: 'critic_highlights', label: 'Critic Highlights — Top Scores This Cycle' },
   { key: 'substack_intel', label: 'Substack Intelligence — Authors & Overlap' },
   { key: 'substack_leads', label: 'Substack Intelligence — Buying Leads' },
-  { key: 'vintage_watch', label: 'Vintage & Producer Watch — Emily\u2019s Take' },
+  { key: 'vintage_watch', label: 'Vintage Watch — Emily\u2019s Take' },
+  { key: 'producer_watch', label: 'Producer Watch — Emily\u2019s Take' },
 ]
 
 const STORAGE_KEY = 'wine-radar-draft-sections'
