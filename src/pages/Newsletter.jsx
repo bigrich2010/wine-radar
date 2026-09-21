@@ -69,6 +69,38 @@ export default function Newsletter() {
     return result
   }
 
+  const [extractingKey, setExtractingKey] = useState(null)
+  const extractingRef = useRef(false) // same synchronous-guard pattern used throughout
+
+  async function extractMentions(key) {
+    if (extractingRef.current) return
+    const s = sections[key]
+    if (!s || !s.text) return
+    extractingRef.current = true
+    setExtractingKey(key)
+    setStatusMsg('')
+    try {
+      const res = await fetch('/api/extract-leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: s.text, sectionLabel: SECTION_DEFS.find(d => d.key === key)?.label }),
+      })
+      const json = await res.json()
+      if (!res.ok || json.error) {
+        setStatusMsg(`Couldn't extract mentions: ${json.error || 'unknown error'}`)
+      } else if (json.added > 0) {
+        setStatusMsg(`${json.added} wine${json.added === 1 ? '' : 's'} added to Get Me Some.`)
+      } else {
+        setStatusMsg('No specific wines found worth adding from this section.')
+      }
+    } catch (err) {
+      setStatusMsg(`Network error: ${err.message}`)
+    } finally {
+      extractingRef.current = false
+      setExtractingKey(null)
+    }
+  }
+
   async function generateAll() {
     if (runningAllRef.current) return
     runningAllRef.current = true
@@ -146,6 +178,13 @@ export default function Newsletter() {
                 {busy ? 'Working…' : (s?.text ? 'Refresh' : 'Generate')}
               </button>
             </div>
+            {s?.text && (
+              <div className="row no-print" style={{ marginTop: -6, marginBottom: 8 }}>
+                <button className="secondary" disabled={!!extractingKey || anyBusy} onClick={() => extractMentions(def.key)}>
+                  {extractingKey === def.key ? 'Adding…' : '+ Add mentions to Get Me Some'}
+                </button>
+              </div>
+            )}
             {s?.updated_at && <div className="updated">Updated {s.updated_at}{s.queries?.length ? ` · ${s.queries.length} searches` : ''}</div>}
             {s?.error && <div className="errtext">{s.error}</div>}
             {s?.truncated && !s?.error && <div className="errtext">⚠️ This response was cut off due to length — hit Refresh to try again, ideally getting a more complete version.</div>}
