@@ -1,16 +1,34 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { supabase } from '../supabaseClient.js'
 
 const CALL_COLORS = { BUY: '#8b3a2b', WATCH: '#7a6b30', PASS: '#5a5048', INVESTIGATE: '#4a5568' }
+
+function readFileAsBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      // reader.result is "data:image/jpeg;base64,AAAA..." - strip the prefix, the API wants raw base64
+      const commaIndex = reader.result.indexOf(',')
+      resolve(reader.result.slice(commaIndex + 1))
+    }
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+}
 
 function AddForm({ onAdded }) {
   const [producer, setProducer] = useState('')
   const [wine, setWine] = useState('')
   const [vintage, setVintage] = useState('')
   const [price, setPrice] = useState('')
+  const [notes, setNotes] = useState('')
   const [call, setCall] = useState('INVESTIGATE')
   const [sourceUrl, setSourceUrl] = useState('')
   const [open, setOpen] = useState(false)
+  const [extracting, setExtracting] = useState(false)
+  const [extractMsg, setExtractMsg] = useState('')
+  const fileInputRef = useRef(null)
+  const extractingRef = useRef(false) // synchronous guard, same pattern used for section generation
 
   async function submit() {
     if (!producer.trim()) return
@@ -19,19 +37,70 @@ function AddForm({ onAdded }) {
       wine: wine.trim() || null,
       vintage: vintage.trim() || null,
       price: price.trim() || null,
+      notes: notes.trim() || null,
       call,
       source_url: sourceUrl.trim() || null,
     })
-    setProducer(''); setWine(''); setVintage(''); setPrice(''); setCall('INVESTIGATE'); setSourceUrl(''); setOpen(false)
+    setProducer(''); setWine(''); setVintage(''); setPrice(''); setNotes(''); setCall('INVESTIGATE'); setSourceUrl(''); setOpen(false); setExtractMsg('')
     onAdded()
   }
 
+  async function handleImageSelected(e) {
+    const file = e.target.files && e.target.files[0]
+    e.target.value = '' // allow selecting the same file again later
+    if (!file) return
+    if (extractingRef.current) return
+    extractingRef.current = true
+    setOpen(true) // reveal the form so the user sees fields fill in
+    setExtracting(true)
+    setExtractMsg('')
+    try {
+      const base64 = await readFileAsBase64(file)
+      const res = await fetch('/api/extract-wine', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: base64, mediaType: file.type }),
+      })
+      const json = await res.json()
+      if (!res.ok || json.error) {
+        setExtractMsg(json.error || 'Could not read that image - add the details manually.')
+      } else if (!json.found) {
+        setExtractMsg("Couldn't identify a wine in that image - add the details manually.")
+      } else {
+        if (json.producer) setProducer(json.producer)
+        if (json.wine) setWine(json.wine)
+        if (json.vintage) setVintage(json.vintage)
+        if (json.price) setPrice(json.price)
+        if (json.notes) setNotes(json.notes)
+        setExtractMsg('Filled in from your photo - check it over before saving.')
+      }
+    } catch (err) {
+      setExtractMsg(`Network error reading image: ${err.message}`)
+    } finally {
+      extractingRef.current = false
+      setExtracting(false)
+    }
+  }
+
   if (!open) {
-    return <button className="secondary" onClick={() => setOpen(true)}>Add to Get Me Some</button>
+    return (
+      <div className="row">
+        <button className="secondary" onClick={() => setOpen(true)}>Add to Get Me Some</button>
+        <button className="secondary" onClick={() => fileInputRef.current && fileInputRef.current.click()}>📷 Add from photo</button>
+        <input ref={fileInputRef} type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={handleImageSelected} />
+      </div>
+    )
   }
 
   return (
     <div className="note-item">
+      <div className="row" style={{ marginBottom: 8 }}>
+        <button className="secondary" onClick={() => fileInputRef.current && fileInputRef.current.click()} disabled={extracting}>
+          {extracting ? 'Reading photo…' : '📷 Fill from photo'}
+        </button>
+        <input ref={fileInputRef} type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={handleImageSelected} />
+      </div>
+      {extractMsg && <div className="status" style={{ marginBottom: 8 }}>{extractMsg}</div>}
       <input type="text" placeholder="Producer (required)" value={producer} onChange={e => setProducer(e.target.value)} style={{ marginBottom: 8 }} />
       <input type="text" placeholder="Wine / cuvée" value={wine} onChange={e => setWine(e.target.value)} style={{ marginBottom: 8 }} />
       <div className="row" style={{ marginBottom: 8 }}>
@@ -39,6 +108,7 @@ function AddForm({ onAdded }) {
         <input type="text" placeholder="Price" value={price} onChange={e => setPrice(e.target.value)} style={{ flex: 1 }} />
       </div>
       <input type="text" placeholder="Source URL (optional)" value={sourceUrl} onChange={e => setSourceUrl(e.target.value)} style={{ marginBottom: 8 }} />
+      <textarea placeholder="Notes (optional)" value={notes} onChange={e => setNotes(e.target.value)} style={{ marginBottom: 8, height: 60 }} />
       <div className="row">
         {['BUY', 'WATCH', 'PASS', 'INVESTIGATE'].map(c => (
           <button key={c} className="secondary" onClick={() => setCall(c)} style={{ background: call === c ? CALL_COLORS[c] : undefined, opacity: call === c ? 1 : 0.6 }}>{c}</button>
