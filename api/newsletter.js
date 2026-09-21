@@ -51,7 +51,9 @@ OVERLAP (the most valuable part - do not skip it):
 AUTHOR RANKING: For each author, note whether their current tier (A-D) still seems right based on this cycle's Bordeaux/Barolo/Burgundy output specifically, and their strength area. If a ranking should change, say why, citing the actual piece that justifies it.
 
 If you genuinely cannot cover every author within a reasonable length, STOP CLEANLY after finishing the author or theme you are on - never cut off mid-sentence. Write this as "## Substack Intelligence — Authors & Overlap" with clear sub-headers for the overlap themes first, then author notes, then ranking changes.` },
-  { key: 'substack_leads', label: 'Substack Intelligence — Buying Leads', maxTokens: 2600, instruction: `Based on the same tracked Substack authors, produce Bordeaux/Barolo/Burgundy-focused buying-lead intelligence for "## Substack Intelligence — Buying Leads". This is deliberately international-focused - the domestic Hit List elsewhere in this newsletter already covers Australian buying opportunities.
+  { key: 'substack_leads', label: 'Substack Intelligence — Buying Leads', maxTokens: 2600, recordLeads: true, instruction: `Based on the same tracked Substack authors, produce Bordeaux/Barolo/Burgundy-focused buying-lead intelligence for "## Substack Intelligence — Buying Leads". This is deliberately international-focused - the domestic Hit List elsewhere in this newsletter already covers Australian buying opportunities.
+
+After writing the prose section below, call the record_leads tool EXACTLY ONCE as your final action, listing every genuine lead you just wrote about as structured data (matching what's in the prose - do not invent leads that aren't in your own written section). This is what actually gets a lead into the collector's tracked buying list, not just mentioned in passing text.
 
 SEARCH BUDGET: aim for roughly 4-5 searches total - this can mostly build on what Substack Intelligence — Authors & Overlap already found rather than re-searching from scratch. Prioritise depth on 2-3 genuinely strong leads over a long, shallow list.
 
@@ -111,6 +113,38 @@ SOURCE TIERS:
 Write ONLY the single section requested, starting with its "## " heading. Do not write other sections. Paraphrase everything, never quote more than a few words verbatim. Be specific: name producers, vintages, scores, critics, dates. Do not fabricate. If there's genuinely nothing new, say so briefly rather than padding.
 
 CRITICAL: your response must contain ONLY the finished, polished section - nothing else. Do not narrate your research process. Do not write things like "Let me check...", "I now have...", "Good, I've confirmed...", or any other commentary about what you're doing or have found. If you need to think through what to search for or how to interpret results, do that silently - only the final, publication-ready text should appear in your response.`
+
+// Structured tool for sections that opt in via `recordLeads: true` on their SECTIONS
+// entry. The model writes its normal prose as always, then calls this ONCE as its
+// final action, giving real leads as structured data - this is what actually lands
+// in the get_me_some table, not something we parse out of free-form prose after the
+// fact (which would be fragile - see tonight's narration-stripping saga for why).
+const RECORD_LEADS_TOOL = {
+  name: 'record_leads',
+  description: 'Record every genuine buying lead from this section as structured data. Call this once, as the final action, after writing the prose section.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      leads: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            producer: { type: 'string' },
+            wine: { type: 'string' },
+            vintage: { type: 'string' },
+            price: { type: 'string' },
+            call: { type: 'string', enum: ['BUY', 'WATCH', 'PASS', 'INVESTIGATE'] },
+            source_url: { type: 'string' },
+            notes: { type: 'string', description: 'One sentence on why this is a lead' },
+          },
+          required: ['producer', 'call'],
+        },
+      },
+    },
+    required: ['leads'],
+  },
+}
 
 function isRetryableStatus(status) {
   return status === 429 || (status >= 500 && status <= 599)
@@ -244,7 +278,9 @@ export function buildHandler({ createClient: createClientDep, fetchImpl }) {
         max_tokens: sectionDef.maxTokens || 1800,
         system: SYSTEM_PROMPT_BASE,
         messages: [{ role: 'user', content: prompt }],
-        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+        tools: sectionDef.recordLeads
+          ? [{ type: 'web_search_20250305', name: 'web_search' }, RECORD_LEADS_TOOL]
+          : [{ type: 'web_search_20250305', name: 'web_search' }],
       }),
     })
 
@@ -271,6 +307,30 @@ export function buildHandler({ createClient: createClientDep, fetchImpl }) {
       return res.status(502).json({ error: truncated ? 'Ran out of room before writing anything - try again' : 'No content returned' })
     }
 
+    // If this section opted into structured lead recording, write whatever the model
+    // put in its record_leads tool call straight into the database. This is real
+    // structured data the model produced deliberately, not something parsed out of
+    // free-form prose after the fact.
+    let autoAddedLeads = 0
+    if (sectionDef.recordLeads) {
+      const leadsCall = (data.content || []).find(b => b.type === 'tool_use' && b.name === 'record_leads')
+      const leads = (leadsCall && leadsCall.input && Array.isArray(leadsCall.input.leads)) ? leadsCall.input.leads : []
+      for (const lead of leads) {
+        if (!lead || !lead.producer) continue // producer is the one required field - skip anything malformed
+        const { error: insertError } = await supabase.from('get_me_some').insert({
+          producer: lead.producer,
+          wine: lead.wine || null,
+          vintage: lead.vintage || null,
+          price: lead.price || null,
+          call: ['BUY', 'WATCH', 'PASS', 'INVESTIGATE'].includes(lead.call) ? lead.call : 'INVESTIGATE',
+          source_name: sectionDef.label,
+          source_url: lead.source_url || null,
+          notes: lead.notes || null,
+        })
+        if (!insertError) autoAddedLeads++
+      }
+    }
+
     return res.status(200).json({
       ok: true,
       key: sectionDef.key,
@@ -279,6 +339,7 @@ export function buildHandler({ createClient: createClientDep, fetchImpl }) {
       queries,
       truncated,
       updated_at: today,
+      autoAddedLeads,
       contextWarning: dbErrors.length > 0 ? `Some context failed to load, section may be less accurate: ${dbErrors.join('; ')}` : undefined,
     })
   } catch (err) {
