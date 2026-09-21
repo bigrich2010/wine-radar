@@ -25,47 +25,35 @@ function loadSavedSections() {
     const raw = localStorage.getItem(STORAGE_KEY)
     return raw ? JSON.parse(raw) : {}
   } catch (e) {
-    return {} // corrupted or unavailable storage shouldn't crash the app, just start fresh
+    return {}
   }
 }
 
 export default function Newsletter() {
-  const [sections, setSections] = useState(loadSavedSections) // key -> { text, updated_at, queries, error }
-  const [generatingKey, setGeneratingKey] = useState(null) // for UI display only - not the actual guard
+  const [sections, setSections] = useState(loadSavedSections)
+  const [generatingKey, setGeneratingKey] = useState(null)
   const [statusMsg, setStatusMsg] = useState('')
   const [saving, setSaving] = useState(false)
   const [runningAll, setRunningAll] = useState(false)
   const [allProgress, setAllProgress] = useState({ done: 0, total: 0 })
-  const runningAllRef = useRef(false) // synchronous guard, same pattern as the section generator itself
+  const runningAllRef = useRef(false)
 
-  // The real concurrency guard lives here, in a ref - synchronous and unaffected by React's
-  // render/state timing, unlike the `generatingKey` state above (which is display-only).
   const generatorRef = useRef(null)
   if (!generatorRef.current) generatorRef.current = createSectionGenerator(fetch.bind(window))
   const savingRef = useRef(false)
 
-  // Persist to localStorage on every change - this is what actually fixes losing
-  // everything when navigating to Archive/Sources and back. A real deployed page,
-  // unlike the earlier sandboxed artifact, so localStorage is the right tool here.
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(sections))
-    } catch (e) {
-      // Storage full or unavailable - not fatal, just means this session's progress
-      // won't survive navigation, which is the pre-existing behavior anyway.
-    }
+    } catch (e) {}
   }, [sections])
 
   async function generateSection(key) {
     setStatusMsg('')
     const result = await generatorRef.current.generate(key, (acquiredKey) => {
-      // This only ever fires for the call that actually won the race, synchronously
-      // at the moment it acquires the lock - never for a call that gets skipped.
       setGeneratingKey(acquiredKey)
     })
     if (result.skipped) {
-      // This call never acquired the lock, so it never touched generatingKey at all -
-      // nothing to undo here, whatever is currently displayed belongs to the real one.
       return
     }
     if (!result.ok) {
@@ -73,22 +61,20 @@ export default function Newsletter() {
       setStatusMsg(`${SECTION_DEFS.find(s => s.key === key)?.label} failed: ${result.error}`)
     } else {
       setSections(prev => ({ ...prev, [key]: { text: result.text, updated_at: result.updated_at, queries: result.queries, truncated: result.truncated, error: null } }))
-      setStatusMsg(`${result.label} updated.`)
+      const leadsNote = result.autoAddedLeads > 0 ? ` ${result.autoAddedLeads} lead${result.autoAddedLeads === 1 ? '' : 's'} added to Get Me Some.` : ''
+      setStatusMsg(`${result.label} updated.${leadsNote}`)
     }
     setGeneratingKey(null)
     return result
   }
 
   async function generateAll() {
-    if (runningAllRef.current) return // synchronous guard - a double-tap on Generate All can't start two loops
+    if (runningAllRef.current) return
     runningAllRef.current = true
     setRunningAll(true)
     setAllProgress({ done: 0, total: SECTION_DEFS.length })
     for (let i = 0; i < SECTION_DEFS.length; i++) {
       setAllProgress({ done: i, total: SECTION_DEFS.length })
-      // generateSection already holds its own single-call lock via generatorRef - this loop
-      // just calls it repeatedly and waits for each one to genuinely finish before starting
-      // the next, rather than firing all 11 at once.
       await generateSection(SECTION_DEFS[i].key)
     }
     setAllProgress({ done: SECTION_DEFS.length, total: SECTION_DEFS.length })
@@ -97,7 +83,7 @@ export default function Newsletter() {
   }
 
   async function saveAsIssue() {
-    if (savingRef.current) return // same synchronous-guard pattern for the save button
+    if (savingRef.current) return
     savingRef.current = true
     setSaving(true)
     try {
@@ -160,7 +146,7 @@ export default function Newsletter() {
             {s?.text ? (
               <ReactMarkdown
                 components={{
-                  h2: () => null, // the "## Heading" from the model is redundant with the card's own h2
+                  h2: () => null,
                   p: ({ children }) => <p className="body">{children}</p>,
                 }}
               >
