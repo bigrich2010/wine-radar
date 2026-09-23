@@ -126,6 +126,15 @@ export default function GetMeSome() {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [showPassed, setShowPassed] = useState(false)
+  const [expanded, setExpanded] = useState(new Set())
+
+  function toggleExpanded(id) {
+    setExpanded(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
 
   async function load() {
     const { data } = await supabase.from('get_me_some').select('*').order('created_at', { ascending: false })
@@ -171,12 +180,20 @@ export default function GetMeSome() {
             {item.price ? `${item.price} · ` : ''}{item.status === 'bought' ? '✓ Bought' : item.status === 'passed' ? 'Passed' : 'Open'}
             {item.source_url && <> · <a href={item.source_url} target="_blank" rel="noreferrer" style={{ color: '#e0b872' }}>source</a></>}
           </div>
-          {item.notes && <p className="body">{item.notes}</p>}
-          <div className="row" style={{ marginTop: 8 }}>
-            {item.status !== 'bought' && <button className="secondary" onClick={() => setStatus(item.id, 'bought')}>Mark Bought</button>}
-            {item.status !== 'passed' && <button className="secondary" onClick={() => setStatus(item.id, 'passed')}>Mark Passed</button>}
-            {item.status !== 'open' && <button className="secondary" onClick={() => setStatus(item.id, 'open')}>Reopen</button>}
-            <button className="secondary" onClick={() => remove(item.id)}>Remove</button>
+          {item.notes && (
+            <p
+              className="body"
+              onClick={() => toggleExpanded(item.id)}
+              style={expanded.has(item.id) ? { cursor: 'pointer' } : { cursor: 'pointer', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
+            >
+              {item.notes}
+            </p>
+          )}
+          <div className="row" style={{ marginTop: 8, gap: 6 }}>
+            {item.status !== 'bought' && <button className="secondary" title="Mark bought" onClick={() => setStatus(item.id, 'bought')} style={{ padding: '4px 10px' }}>✓</button>}
+            {item.status !== 'passed' && <button className="secondary" title="Mark passed" onClick={() => setStatus(item.id, 'passed')} style={{ padding: '4px 10px' }}>✗</button>}
+            {item.status !== 'open' && <button className="secondary" title="Reopen" onClick={() => setStatus(item.id, 'open')} style={{ padding: '4px 10px' }}>↺</button>}
+            <button className="secondary" title="Remove" onClick={() => remove(item.id)} style={{ padding: '4px 10px' }}>🗑</button>
           </div>
         </div>
       ))}
