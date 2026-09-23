@@ -3,6 +3,7 @@ import Newsletter from './pages/Newsletter.jsx'
 import Archive from './pages/Archive.jsx'
 import Sources from './pages/Sources.jsx'
 import GetMeSome from './pages/GetMeSome.jsx'
+import { supabase } from './supabaseClient.js'
 
 export default function App() {
   return (
@@ -14,6 +15,7 @@ export default function App() {
           <NavLink to="/getmesome" className={({isActive}) => isActive ? 'active' : ''}>Get Me Some</NavLink>
           <NavLink to="/archive" className={({isActive}) => isActive ? 'active' : ''}>Archive</NavLink>
           <NavLink to="/sources" className={({isActive}) => isActive ? 'active' : ''}>Sources</NavLink>
+          <button className="secondary" onClick={() => supabase.auth.signOut()}>Sign out</button>
         </nav>
       </header>
       <main>
