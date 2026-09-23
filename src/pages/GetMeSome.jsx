@@ -176,9 +176,17 @@ export default function GetMeSome() {
               {item.call}
             </span>
           </div>
-          <div className="updated">
-            {item.price ? `${item.price} · ` : ''}{item.status === 'bought' ? '✓ Bought' : item.status === 'passed' ? 'Passed' : 'Open'}
-            {item.source_url && <> · <a href={item.source_url} target="_blank" rel="noreferrer" style={{ color: '#e0b872' }}>source</a></>}
+          <div className="updated" style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
+            <span>
+              {item.price ? `${item.price} · ` : ''}{item.status === 'bought' ? '✓ Bought' : item.status === 'passed' ? 'Passed' : 'Open'}
+              {item.source_url && <> · <a href={item.source_url} target="_blank" rel="noreferrer" style={{ color: '#e0b872' }}>source</a></>}
+            </span>
+            <span style={{ marginLeft: 'auto', display: 'flex', gap: 4 }}>
+              {item.status !== 'bought' && <button className="secondary" title="Mark bought" onClick={() => setStatus(item.id, 'bought')} style={{ padding: '2px 7px', fontSize: 12, lineHeight: 1.4 }}>✓</button>}
+              {item.status !== 'passed' && <button className="secondary" title="Mark passed" onClick={() => setStatus(item.id, 'passed')} style={{ padding: '2px 7px', fontSize: 12, lineHeight: 1.4 }}>✗</button>}
+              {item.status !== 'open' && <button className="secondary" title="Reopen" onClick={() => setStatus(item.id, 'open')} style={{ padding: '2px 7px', fontSize: 12, lineHeight: 1.4 }}>↺</button>}
+              <button className="secondary" title="Remove" onClick={() => remove(item.id)} style={{ padding: '2px 7px', fontSize: 12, lineHeight: 1.4 }}>🗑</button>
+            </span>
           </div>
           {item.notes && (
             <p
@@ -189,12 +197,6 @@ export default function GetMeSome() {
               {item.notes}
             </p>
           )}
-          <div className="row" style={{ marginTop: 8, gap: 6 }}>
-            {item.status !== 'bought' && <button className="secondary" title="Mark bought" onClick={() => setStatus(item.id, 'bought')} style={{ padding: '4px 10px' }}>✓</button>}
-            {item.status !== 'passed' && <button className="secondary" title="Mark passed" onClick={() => setStatus(item.id, 'passed')} style={{ padding: '4px 10px' }}>✗</button>}
-            {item.status !== 'open' && <button className="secondary" title="Reopen" onClick={() => setStatus(item.id, 'open')} style={{ padding: '4px 10px' }}>↺</button>}
-            <button className="secondary" title="Remove" onClick={() => remove(item.id)} style={{ padding: '4px 10px' }}>🗑</button>
-          </div>
         </div>
       ))}
     </div>
