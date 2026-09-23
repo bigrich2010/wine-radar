@@ -3,6 +3,15 @@ import { supabase } from '../supabaseClient.js'
 
 const CALL_COLORS = { BUY: '#8b3a2b', WATCH: '#7a6b30', PASS: '#5a5048', INVESTIGATE: '#4a5568' }
 
+const FOLDERS = [
+  { key: 'action', label: 'Action List' },
+  { key: 'overseas', label: 'Overseas Intel' },
+  { key: 'domestic', label: 'Domestic Watch' },
+  { key: 'research', label: 'Research' },
+  { key: 'bought', label: 'Bought / Cellared' },
+]
+const DELETED = { key: 'deleted', label: 'Deleted' }
+
 function readFileAsBase64(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
@@ -23,6 +32,7 @@ function AddForm({ onAdded }) {
   const [price, setPrice] = useState('')
   const [notes, setNotes] = useState('')
   const [call, setCall] = useState('INVESTIGATE')
+  const [folder, setFolder] = useState('action')
   const [sourceUrl, setSourceUrl] = useState('')
   const [open, setOpen] = useState(false)
   const [extracting, setExtracting] = useState(false)
@@ -39,9 +49,10 @@ function AddForm({ onAdded }) {
       price: price.trim() || null,
       notes: notes.trim() || null,
       call,
+      folder,
       source_url: sourceUrl.trim() || null,
     })
-    setProducer(''); setWine(''); setVintage(''); setPrice(''); setNotes(''); setCall('INVESTIGATE'); setSourceUrl(''); setOpen(false); setExtractMsg('')
+    setProducer(''); setWine(''); setVintage(''); setPrice(''); setNotes(''); setCall('INVESTIGATE'); setFolder('action'); setSourceUrl(''); setOpen(false); setExtractMsg('')
     onAdded()
   }
 
@@ -109,9 +120,14 @@ function AddForm({ onAdded }) {
       </div>
       <input type="text" placeholder="Source URL (optional)" value={sourceUrl} onChange={e => setSourceUrl(e.target.value)} style={{ marginBottom: 8 }} />
       <textarea placeholder="Notes (optional)" value={notes} onChange={e => setNotes(e.target.value)} style={{ marginBottom: 8, height: 60 }} />
-      <div className="row">
+      <div className="row" style={{ marginBottom: 8 }}>
         {['BUY', 'WATCH', 'PASS', 'INVESTIGATE'].map(c => (
           <button key={c} className="secondary" onClick={() => setCall(c)} style={{ background: call === c ? CALL_COLORS[c] : undefined, opacity: call === c ? 1 : 0.6 }}>{c}</button>
+        ))}
+      </div>
+      <div className="row">
+        {[...FOLDERS, DELETED].map(f => (
+          <button key={f.key} className="secondary" onClick={() => setFolder(f.key)} style={{ opacity: folder === f.key ? 1 : 0.55, fontWeight: folder === f.key ? 700 : 400 }}>{f.label}</button>
         ))}
       </div>
       <div className="row" style={{ marginTop: 8 }}>
@@ -125,13 +141,22 @@ function AddForm({ onAdded }) {
 export default function GetMeSome() {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
-  const [showPassed, setShowPassed] = useState(false)
+  const [showDeleted, setShowDeleted] = useState(false)
   const [expanded, setExpanded] = useState(new Set())
+  const [collapsedFolders, setCollapsedFolders] = useState(new Set())
 
   function toggleExpanded(id) {
     setExpanded(prev => {
       const next = new Set(prev)
       next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  function toggleFolder(key) {
+    setCollapsedFolders(prev => {
+      const next = new Set(prev)
+      next.has(key) ? next.delete(key) : next.add(key)
       return next
     })
   }
@@ -143,62 +168,82 @@ export default function GetMeSome() {
   }
   useEffect(() => { load() }, [])
 
-  async function setStatus(id, status) {
-    await supabase.from('get_me_some').update({ status, updated_at: new Date().toISOString() }).eq('id', id)
+  async function setFolder(id, folder) {
+    await supabase.from('get_me_some').update({ folder, updated_at: new Date().toISOString() }).eq('id', id)
     load()
   }
 
-  async function remove(id) {
+  async function permanentlyRemove(id) {
     await supabase.from('get_me_some').delete().eq('id', id)
     load()
   }
 
   if (loading) return <div className="empty-inline">Loading…</div>
 
-  const visible = items.filter(i => showPassed || i.status !== 'passed')
+  const folderList = showDeleted ? [...FOLDERS, DELETED] : FOLDERS
 
   return (
     <div>
       <div className="section-title">Get Me Some</div>
-      <p className="note-hint">Leads worth actually tracking down - pulled from Substack Leads or Vintage &amp; Producer Watch, or added directly. Mark them bought or passed as you go.</p>
+      <p className="note-hint">Leads worth actually tracking down - pulled from Substack Leads or Vintage &amp; Producer Watch, or added directly. File them as you go.</p>
       <div className="row" style={{ marginBottom: 14 }}>
         <AddForm onAdded={load} />
-        <button className="secondary" onClick={() => setShowPassed(s => !s)}>{showPassed ? 'Hide passed' : 'Show passed'}</button>
+        <button className="secondary" onClick={() => setShowDeleted(s => !s)}>{showDeleted ? 'Hide deleted' : 'Show deleted'}</button>
       </div>
-      {visible.length === 0 && <div className="empty-inline">Nothing here yet.</div>}
-      {visible.map(item => (
-        <div className="section-card" key={item.id} style={{ opacity: item.status === 'passed' ? 0.55 : 1 }}>
-          <div className="head">
-            <h2 style={{ textTransform: 'none', fontSize: 14 }}>
-              {item.producer}{item.wine ? ` — ${item.wine}` : ''}{item.vintage ? ` ${item.vintage}` : ''}
-            </h2>
-            <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 5, background: CALL_COLORS[item.call] || '#4a5568', color: '#fdf6ec' }}>
-              {item.call}
-            </span>
-          </div>
-          <div className="updated" style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
-            <span>
-              {item.price ? `${item.price} · ` : ''}{item.status === 'bought' ? '✓ Bought' : item.status === 'passed' ? 'Passed' : 'Open'}
-              {item.source_url && <> · <a href={item.source_url} target="_blank" rel="noreferrer" style={{ color: '#e0b872' }}>source</a></>}
-            </span>
-            <span style={{ marginLeft: 'auto', display: 'flex', gap: 4 }}>
-              {item.status !== 'bought' && <button className="secondary" title="Mark bought" onClick={() => setStatus(item.id, 'bought')} style={{ padding: '2px 7px', fontSize: 12, lineHeight: 1.4 }}>✓</button>}
-              {item.status !== 'passed' && <button className="secondary" title="Mark passed" onClick={() => setStatus(item.id, 'passed')} style={{ padding: '2px 7px', fontSize: 12, lineHeight: 1.4 }}>✗</button>}
-              {item.status !== 'open' && <button className="secondary" title="Reopen" onClick={() => setStatus(item.id, 'open')} style={{ padding: '2px 7px', fontSize: 12, lineHeight: 1.4 }}>↺</button>}
-              <button className="secondary" title="Remove" onClick={() => remove(item.id)} style={{ padding: '2px 7px', fontSize: 12, lineHeight: 1.4 }}>🗑</button>
-            </span>
-          </div>
-          {item.notes && (
-            <p
-              className="body"
-              onClick={() => toggleExpanded(item.id)}
-              style={expanded.has(item.id) ? { cursor: 'pointer' } : { cursor: 'pointer', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
+
+      {folderList.map(folder => {
+        const folderItems = items.filter(i => (i.folder || 'action') === folder.key)
+        const isCollapsed = collapsedFolders.has(folder.key)
+        return (
+          <div key={folder.key} style={{ marginBottom: 18 }}>
+            <div
+              onClick={() => toggleFolder(folder.key)}
+              style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', padding: '6px 2px', borderBottom: '1px solid #3a322a' }}
             >
-              {item.notes}
-            </p>
-          )}
-        </div>
-      ))}
+              <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: 0.3, color: '#e0b872' }}>
+                {isCollapsed ? '▸' : '▾'} {folder.label} <span style={{ color: '#8a7f70', fontWeight: 400 }}>({folderItems.length})</span>
+              </span>
+            </div>
+            {!isCollapsed && folderItems.length === 0 && <div className="empty-inline" style={{ padding: '8px 2px' }}>Nothing filed here.</div>}
+            {!isCollapsed && folderItems.map(item => {
+              const isOpen = expanded.has(item.id)
+              return (
+                <div className="section-card" key={item.id} style={{ padding: '10px 14px', cursor: 'pointer' }} onClick={() => toggleExpanded(item.id)}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 14, fontWeight: 600, color: '#fdf6ec' }}>
+                      {item.producer}{item.wine ? ` — ${item.wine}` : ''}{item.vintage ? ` ${item.vintage}` : ''}
+                    </span>
+                    <span style={{ flexShrink: 0, fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 5, background: CALL_COLORS[item.call] || '#4a5568', color: '#fdf6ec' }}>
+                      {item.call}
+                    </span>
+                  </div>
+                  {isOpen && (
+                    <div onClick={e => e.stopPropagation()} style={{ marginTop: 8 }}>
+                      <div className="updated">
+                        {item.price ? `${item.price} · ` : ''}
+                        {item.source_url && <a href={item.source_url} target="_blank" rel="noreferrer" style={{ color: '#e0b872' }}>source</a>}
+                      </div>
+                      {item.notes && <p className="body" style={{ marginTop: 6 }}>{item.notes}</p>}
+                      <div className="row" style={{ marginTop: 8, gap: 4, flexWrap: 'wrap' }}>
+                        {[...FOLDERS, DELETED].filter(f => f.key !== folder.key).map(f => (
+                          <button key={f.key} className="secondary" onClick={() => setFolder(item.id, f.key)} style={{ padding: '4px 8px', fontSize: 12 }}>
+                            → {f.label}
+                          </button>
+                        ))}
+                        {folder.key === 'deleted' && (
+                          <button className="secondary" onClick={() => permanentlyRemove(item.id)} title="Permanently remove" style={{ padding: '4px 8px', fontSize: 12, color: '#c96a52' }}>
+                            🗑 Remove permanently
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )
+      })}
     </div>
   )
 }
